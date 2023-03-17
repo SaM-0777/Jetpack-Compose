@@ -1,6 +1,7 @@
 package com.realm.tutorial
 
 import android.graphics.Paint.Align
+import android.graphics.drawable.shapes.ArcShape
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,13 +13,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layoutId
@@ -34,6 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ChainStyle
@@ -63,47 +70,73 @@ class MainActivity : ComponentActivity() {
     )
 
     setContent {
-      var sizeState by remember {
-        mutableStateOf(200.dp)
-      }
-      val size by animateDpAsState(
-        targetValue = sizeState,
-        keyframes {
-          durationMillis = 5000
-          sizeState at 0 with LinearEasing
-          sizeState * 1.5f at 1000 with FastOutLinearInEasing
-          sizeState * 2f at 5000
-        }
-//        spring(
-//          dampingRatio = Spring.DampingRatioHighBouncy
-//        )
-//        tween(
-//          durationMillis = 3000,
-//          delayMillis = 300,
-//          easing = LinearOutSlowInEasing
-//        )
-      )
-
-      val infiniteTransition = rememberInfiniteTransition ()
-      val color by infiniteTransition.animateColor(
-        initialValue = Color.Red,
-        targetValue = Color.Green,
-        animationSpec = infiniteRepeatable(
-          tween(durationMillis = 2000),
-          repeatMode = RepeatMode.Reverse
-        )
-      )
-
-
-      Box(modifier = Modifier
-        .size(size)
-        .background(color),
-        contentAlignment = Alignment.Center
+      Surface(
+        color = Color(0xFF101010),
+        modifier = Modifier.fillMaxSize()
       ) {
-        Button(onClick = { sizeState += 50.dp }) {
-          Text(text = "Increase Size")
+        DropDown(text = "Hello", modifier = Modifier.padding(15.dp)) {
+          Text(text = "Revealed Text", modifier = Modifier.fillMaxWidth().height(100.dp).background(Color.Green))
         }
       }
     }
   }
 }
+
+
+@Composable
+fun DropDown(
+  text: String,
+  modifier: Modifier = Modifier,
+  initialState: Boolean = false,
+  content: @Composable () -> Unit
+) {
+  var isOpen by remember {
+    mutableStateOf(initialState)
+  }
+  val alpha = animateFloatAsState(targetValue = if (isOpen) 1f else 0f, animationSpec = tween(
+    durationMillis = 300
+  ))
+  val rotateX = animateFloatAsState(targetValue = if (isOpen) 0f else -900f, animationSpec = tween(
+    durationMillis = 300
+  ))
+  
+  Column(
+    modifier = modifier.fillMaxWidth()
+  ) {
+    Row(
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = modifier.fillMaxWidth()
+    ) {
+      Text(
+        text = text,
+        color = Color.White,
+        fontSize = 16.sp
+      )
+      Icon(
+        imageVector = Icons.Default.ArrowDropDown,
+        contentDescription = "Open or Close the DropDown.",
+        tint = Color.White,
+        modifier = Modifier
+          .clickable {
+            isOpen = !isOpen
+          }
+          .scale(1f, if (isOpen) -1f else 1f)
+      )
+    }
+    Spacer(modifier = Modifier.height(10.dp))
+    Box(
+      contentAlignment = Alignment.Center,
+      modifier = Modifier
+        .fillMaxWidth()
+        .graphicsLayer {
+          TransformOrigin(0.5f, 0f)
+          rotationX = rotateX.value
+        }
+        .alpha(alpha = alpha.value)
+    ) {
+      content()
+    }
+  }
+}
+
