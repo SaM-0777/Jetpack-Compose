@@ -1,6 +1,7 @@
 package com.realm.tutorial
 
 import android.graphics.Paint.Align
+import android.graphics.drawable.shapes.ArcShape
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layoutId
@@ -34,6 +37,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ChainStyle
@@ -63,47 +68,61 @@ class MainActivity : ComponentActivity() {
     )
 
     setContent {
-      var sizeState by remember {
-        mutableStateOf(200.dp)
-      }
-      val size by animateDpAsState(
-        targetValue = sizeState,
-        keyframes {
-          durationMillis = 5000
-          sizeState at 0 with LinearEasing
-          sizeState * 1.5f at 1000 with FastOutLinearInEasing
-          sizeState * 2f at 5000
-        }
-//        spring(
-//          dampingRatio = Spring.DampingRatioHighBouncy
-//        )
-//        tween(
-//          durationMillis = 3000,
-//          delayMillis = 300,
-//          easing = LinearOutSlowInEasing
-//        )
-      )
-
-      val infiniteTransition = rememberInfiniteTransition ()
-      val color by infiniteTransition.animateColor(
-        initialValue = Color.Red,
-        targetValue = Color.Green,
-        animationSpec = infiniteRepeatable(
-          tween(durationMillis = 2000),
-          repeatMode = RepeatMode.Reverse
-        )
-      )
-
-
-      Box(modifier = Modifier
-        .size(size)
-        .background(color),
-        contentAlignment = Alignment.Center
+      Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
       ) {
-        Button(onClick = { sizeState += 50.dp }) {
-          Text(text = "Increase Size")
-        }
+        CircularProgress(percentage = 0.8f, number = 100)
       }
     }
+  }
+}
+
+
+@Composable
+fun CircularProgress(
+  percentage: Float,
+  number: Int,
+  fontSize: TextUnit = 28.sp,
+  radius: Dp = 50.dp,
+  color: Color = Color.Green,
+  strokeWidth: Dp = 8.dp,
+  animationDuration: Int = 1000,
+  animationDelay: Int = 0,
+) {
+  var isAnimationPlayed by remember {
+    mutableStateOf(false)
+  }
+  val currentPercentage = animateFloatAsState(
+    targetValue = if(isAnimationPlayed) percentage else 0f,
+    animationSpec = tween(
+      durationMillis = animationDuration,
+      delayMillis = animationDelay
+    )
+  )
+  
+  LaunchedEffect(key1 = true) {
+    isAnimationPlayed = true
+  }
+  
+  Box(
+    contentAlignment = Alignment.Center,
+    modifier = Modifier.size(radius * 2f)
+  ) {
+    Canvas(modifier = Modifier.size(radius * 2f)) {
+      drawArc(
+        color = color,
+        -90f,
+        360 * currentPercentage.value,
+        useCenter = false,
+        style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+      )
+    }
+    Text(
+      text = (currentPercentage.value * number).toInt().toString(),
+      color = Color.Black,
+      fontSize = fontSize,
+      fontWeight = FontWeight.Bold
+    )
   }
 }
